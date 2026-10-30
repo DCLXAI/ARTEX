@@ -26,23 +26,33 @@ func noaWarn(session string) func(string) {
 //
 // noa 是实验功能:接入失败不得中断真实任务。发生错误时经 onWarn 上报并回退内置压缩。
 // 启用成功时清掉 opts.Compaction,避免 agentcore 因「两个上下文管理器同时设置」告警。
-func enableNoa(opts *agentcore.Options, enabled func() bool, archiveRoot, sessionID string, onWarn func(string)) {
+// 返回接入的 noa 会话(可查看其解析后的配置);未开启或接入失败时返回 nil。
+func enableNoa(opts *agentcore.Options, enabled func() bool, archiveRoot, sessionID string, onWarn func(string)) *noaadapter.Session {
 	if enabled == nil || !enabled() {
-		return
+		return nil
 	}
 	if opts.OnWarn == nil {
 		opts.OnWarn = onWarn
 	}
-	if err := noaadapter.Enable(opts, noaadapter.Options{
-		ArchiveBaseDir: filepath.Join(archiveRoot, "noa"),
-		SessionID:      sessionID,
-		OnWarn:         onWarn,
-	}); err != nil {
+	// 接管前先把 profile 已解析的上下文窗口(如 250K、1M)交给 noa,否则其窗口会被悄悄换成
+	// SDK 默认的 200K。MaxTokens 是单独的输出上限,不受影响;窗口缺失时保留 SDK 的 200K 兜底。
+	window := 0
+	if opts.Compaction != nil && opts.Compaction.ContextWindow > 0 {
+		window = opts.Compaction.ContextWindow
+	}
+	session, err := noaadapter.EnableWithSession(opts, noaadapter.Options{
+		ArchiveBaseDir:    filepath.Join(archiveRoot, "noa"),
+		SessionID:         sessionID,
+		OnWarn:            onWarn,
+		ModelContextLimit: window,
+	})
+	if err != nil {
 		if onWarn != nil {
 			onWarn("noa 压缩启用失败,回退内置压缩:" + err.Error())
 		}
-		return
+		return nil
 	}
 	// Compactor 覆盖 Compaction,但两者并存时 agentcore 每次会告警;明确清掉。
 	opts.Compaction = nil
+	return session
 }
