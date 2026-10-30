@@ -9,6 +9,13 @@
 #### 修复的问题
 
 - **无 Postgres 时 `go test ./server` 不再整包失败**：`trafficEvidenceServer`（流量证据 / 漏洞工作流 / 通知推送端到端用例共用）在拿不到数据库配置时原先 `t.Fatal`，导致本地未配 `ARTEX_PG_DSN` 时二十多个用例直接红。现与其它 server 夹具一致改为 `t.Skip`。
+- **Postgres CI 下 agent/server 失败用例**：`TestGraphOverviewExpandsAssociatedCompanyScope` 仍断言已删除的 `coverage.scope` 字段（06a43f3 精简概览后只保留 host_count 等）；改为断言字段已移除并用 host_count / 资产查询验证企业范围。`TestInheritedActivityDetailAndRelationDeletion` 等在 `New()` 恢复共享库残留任务并启动 worker 后，测试结束 TempDir 清理因目录非空失败；现 `Server` 持有可取消根 context，新增 `Close`/`newTestServer`，测试结束停掉运行时，TestMain 启动前也将非终态任务标为 done。
+
+### CI
+
+#### 新增的功能
+
+- **GitHub Actions `ci.yml`**：无 Postgres 的 Go 单元测试、带 `postgres:16` 服务的集成测试（`ARTEX_PG_DSN`）、以及 `web/` 的 biome lint（暂非阻断）。
 
 ## [0.3.15] - 2026-10-07
 
