@@ -60,3 +60,6 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+
+// Patched Norma v0.4.3 (upstream 52f17dd) carrying ScopeWeaver's fixes; see third_party/norma/README.scopeweaver.md.
+replace github.com/Autumn-27/norma => ./third_party/norma
