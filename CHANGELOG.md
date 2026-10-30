@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### 测试
+
+#### 修复的问题
+
+- **无 Postgres 时 `go test ./server` 不再整包失败**：`trafficEvidenceServer`（流量证据 / 漏洞工作流 / 通知推送端到端用例共用）在拿不到数据库配置时原先 `t.Fatal`，导致本地未配 `ARTEX_PG_DSN` 时二十多个用例直接红。现与其它 server 夹具一致改为 `t.Skip`。
+
 ## [0.3.15] - 2026-10-07
 
 ### 拦截
