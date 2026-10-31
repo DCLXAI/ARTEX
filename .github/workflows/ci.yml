@@ -25,6 +25,11 @@ jobs:
           cache: true
       - run: go vet ./...
       - run: go test ./... -count=1
+      # Nested module (vendored norma): root ./... does not reach it.
+      - run: |
+          go vet ./...
+          go test ./... -count=1
+        working-directory: third_party/norma
 
   go-postgres:
     name: Go tests (with Postgres)

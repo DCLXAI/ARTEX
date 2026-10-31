@@ -34,11 +34,11 @@ notice. Other upstream files and module metadata remain byte-identical.
 Exported signatures and serialized formats are unchanged; the behavioral fixes
 above are intentional.
 
-The root module selects this source with a local `replace`. Docker copies it
-before downloading dependencies. `THIRD_PARTY_NOTICES.txt` reproduces the full
-upstream Apache license for archive and container packaging. The snapshot has no
-upstream `NOTICE` file. The existing backend CI job runs this nested module's
-suite separately because root `go test ./...` does not traverse nested modules.
+ARTEX's root `go.mod` selects this source with a local `replace`. The vendored
+`LICENSE` in this directory is the full upstream Apache license. The snapshot has
+no upstream `NOTICE` file. The `Go tests (no Postgres)` CI job runs this nested
+module's `go vet` and suite separately because root `go test ./...` does not
+traverse nested modules.
 
 ```sh
 cd third_party/norma
