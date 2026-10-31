@@ -342,17 +342,17 @@ export default function SkillsPage() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const load = React.useCallback(() => {
-    api.agents().then(setAgents).catch(() => {});
-    api.mcpServers().then(setMcpOptions).catch(() => {});
-    api.missingSkills().then(setMissing).catch(() => {});
+    api.agents().then(setAgents).catch(() => { /* optional: Agent visibility lists render without it */ });
+    api.mcpServers().then(setMcpOptions).catch(() => { /* optional: MCP option lists render without it */ });
+    api.missingSkills().then(setMissing).catch(() => { /* optional: missing-skill hints render without it */ });
     api.skills().then((ss) => {
       setSkills(ss);
-      ss.forEach((s) =>
+      ss.forEach((s) => {
         api.skillVisibility(s.name)
           .then((ids) => setVisibility((v) => ({ ...v, [s.name]: ids })))
-          .catch(() => {}),
-      );
-    }).catch(() => {});
+          .catch(() => { /* ignore: keeps the last loaded visibility (none on first load, so every agent shows unchecked) */ });
+      });
+    }).catch(() => { /* ignore: the tree keeps its current skill list */ });
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
@@ -382,7 +382,7 @@ export default function SkillsPage() {
   function onUploadPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = ""; // reset so picking the same file again re-fires
-    if (f) uploadZip(f);
+    if (f) void uploadZip(f);
   }
 
   React.useEffect(() => {
@@ -629,6 +629,7 @@ export default function SkillsPage() {
         const open = expanded.has(key);
         return (
           <div key={node.path}>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tree row with nested action buttons (so it cannot be a button); keyboard navigation for this tree is not implemented */}
             <div
               className="group relative flex cursor-pointer select-none items-center gap-1 rounded py-0.5 pr-1 text-sm hover:bg-muted"
               style={{ paddingLeft: baseIndent }}
@@ -670,6 +671,7 @@ export default function SkillsPage() {
       // file node
       const isSelected = selected?.skill === skill && selected.path === node.path;
       return (
+        // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tree row with a nested action button (so it cannot be a button); keyboard navigation for this tree is not implemented
         <div
           key={node.path}
           className={cn(
@@ -771,6 +773,7 @@ export default function SkillsPage() {
                 return (
                   <div key={s.name}>
                     {/* skill 根节点 */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tree row with nested action buttons (so it cannot be a button); keyboard navigation for this tree is not implemented */}
                     <div
                       className={cn(
                         "group relative flex cursor-pointer select-none items-center gap-1 rounded px-2 py-1 text-sm",

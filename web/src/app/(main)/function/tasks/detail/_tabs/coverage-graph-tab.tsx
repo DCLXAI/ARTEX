@@ -199,6 +199,7 @@ function graphLabel(n: CoverageGraphNode): string {
     if (n.port) parts.push(`:${n.port}`);
     if (n.page_title) parts.push(n.page_title);
     if (n.status_code) parts.push(String(n.status_code));
+    // biome-ignore lint/nursery/useNullishCoalescing: domain/ip 为空串时也要依次回退到下一项，故保留 ||
     return parts.length ? parts.join(" · ") : n.domain || n.ip || n.label;
   }
   if (n.kind === "endpoint" && n.url) {
