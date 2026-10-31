@@ -43,15 +43,15 @@ import type {
 
 // 紧凑格式化 token 数（12345 → 12.3k，2000000 → 2M）。
 function fmtTokens(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1) + "M";
-  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
   return String(n);
 }
 
 // 缓存命中率 = 缓存读 / 输入（InputTokens 已含 cache_read 子集，故比值在 0–100%）。
 function cacheHitRate(cacheRead: number, input: number): string {
   if (input <= 0) return "—";
-  return Math.round((cacheRead / input) * 100) + "%";
+  return `${Math.round((cacheRead / input) * 100)}%`;
 }
 
 // 测试范围一条的显示值：域名 / 网段 / 公司。
@@ -712,7 +712,7 @@ export function OverviewTab({ taskId }: { taskId: string }) {
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-baseline gap-3">
               <span className="text-2xl font-semibold tabular-nums">
-                {coverage.pct != null ? Math.round(coverage.pct * 100) + "%" : "—"}
+                {coverage.pct != null ? `${Math.round(coverage.pct * 100)}%` : "—"}
               </span>
               <span className="text-muted-foreground text-sm">
                 已测 {coverage.tested} / 范围内 {coverage.denominator}

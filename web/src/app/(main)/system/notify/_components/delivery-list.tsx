@@ -32,7 +32,7 @@ export function DeliveryList({ channels }: { channels: NotificationChannel[] }) 
         setRows(r.deliveries);
         setTotal(r.total);
       })
-      .catch((e) => toast.error("读取投递记录失败：" + (e as Error).message))
+      .catch((e) => toast.error(`读取投递记录失败：${(e as Error).message}`))
       .finally(() => setLoading(false));
   }, [channelID, state, page]);
   React.useEffect(() => {
@@ -45,7 +45,7 @@ export function DeliveryList({ channels }: { channels: NotificationChannel[] }) 
       toast.success("已重新入队");
       load();
     } catch (e) {
-      toast.error("重发失败：" + (e as Error).message);
+      toast.error(`重发失败：${(e as Error).message}`);
     }
   }
 

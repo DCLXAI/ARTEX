@@ -175,7 +175,7 @@ export function FindingsTab({ taskId }: { taskId: string }) {
       toast.success(`已标记为「${statusMeta("finding", next).label}」`);
     } catch (e) {
       setFindings((cur) => cur.map((x) => (x.id === f.id ? { ...x, status: prev } : x)));
-      toast.error("更新失败：" + (e as Error).message);
+      toast.error(`更新失败：${(e as Error).message}`);
     }
   }, []);
 

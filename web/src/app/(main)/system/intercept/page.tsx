@@ -63,8 +63,8 @@ import type {
 
 // fmtTokens 把 token 数压成紧凑写法(1.2k / 3.4M),用于审批用量统计。
 function fmtTokens(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1000) return (n / 1000).toFixed(1) + "k";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 }
 
@@ -228,7 +228,7 @@ function JudgeCard() {
       setCfg(j);
       setProfiles(ps);
     } catch (e) {
-      toast.error("加载模型兜底配置失败: " + (e as Error).message);
+      toast.error(`加载模型兜底配置失败: ${(e as Error).message}`);
     } finally {
       setLoading(false);
     }
@@ -254,7 +254,7 @@ function JudgeCard() {
       toast.success("模型兜底配置已保存");
       await load(); // 回读:提示词若清空则回填内置模板
     } catch (e) {
-      toast.error("保存失败: " + (e as Error).message);
+      toast.error(`保存失败: ${(e as Error).message}`);
     } finally {
       setSaving(false);
     }
@@ -269,7 +269,7 @@ function JudgeCard() {
       setCfg(j);
       toast.success("已恢复内置默认模板");
     } catch (e) {
-      toast.error("恢复失败: " + (e as Error).message);
+      toast.error(`恢复失败: ${(e as Error).message}`);
     } finally {
       setSaving(false);
     }
@@ -570,7 +570,7 @@ export default function InterceptPage() {
       setAllTools(tools);
       setEnabledTools(new Set(cfg.enabled_tools));
     } catch (e) {
-      toast.error("加载失败: " + (e as Error).message);
+      toast.error(`加载失败: ${(e as Error).message}`);
     } finally {
       setScopeLoading(false);
     }
@@ -592,7 +592,7 @@ export default function InterceptPage() {
       setScopeTools([...enabledTools]);
       setScopeOpen(false);
     } catch (e) {
-      toast.error("保存失败: " + (e as Error).message);
+      toast.error(`保存失败: ${(e as Error).message}`);
     } finally {
       setScopeSaving(false);
     }

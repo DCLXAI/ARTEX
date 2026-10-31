@@ -54,13 +54,13 @@ export function UpdateCard() {
       .then((r) => {
         setInfo(r);
         if (!quiet) {
-          if (r.error) toast.error("检查更新失败：" + r.error);
+          if (r.error) toast.error(`检查更新失败：${r.error}`);
           else if (r.has_update) toast.success(`发现新版本 ${r.latest}`);
           else if (r.comparable) toast.success("当前已是最新版本");
         }
       })
       .catch((e) => {
-        if (!quiet) toast.error("检查更新失败：" + (e as Error).message);
+        if (!quiet) toast.error(`检查更新失败：${(e as Error).message}`);
       })
       .finally(() => setChecking(false));
   }, []);
@@ -112,7 +112,7 @@ export function UpdateCard() {
         if (p.phase === "failed") {
           es.close();
           setBusy(false);
-          toast.error("更新失败：" + (p.error || p.message));
+          toast.error(`更新失败：${p.error || p.message}`);
           return;
         }
         if (p.phase === "staged") {
@@ -150,7 +150,7 @@ export function UpdateCard() {
       es.close();
       setBusy(false);
       setProgress(null);
-      toast.error("启动更新失败：" + (e as Error).message);
+      toast.error(`启动更新失败：${(e as Error).message}`);
     });
   };
 
@@ -172,7 +172,7 @@ export function UpdateCard() {
       })
       .catch((e) => {
         setBusy(false);
-        toast.error("回滚失败：" + (e as Error).message);
+        toast.error(`回滚失败：${(e as Error).message}`);
       });
   };
 

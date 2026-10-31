@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 
 import { PlusIcon, Trash2Icon } from "lucide-react";
 

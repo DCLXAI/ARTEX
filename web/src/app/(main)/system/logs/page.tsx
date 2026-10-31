@@ -209,7 +209,7 @@ export default function LogsPage() {
           ) : (
             filtered.map((l) => {
               const body =
-                l.tag && l.text.startsWith("[" + l.tag + "]")
+                l.tag && l.text.startsWith(`[${l.tag}]`)
                   ? l.text.slice(l.tag.length + 2).trimStart()
                   : l.text;
               return (

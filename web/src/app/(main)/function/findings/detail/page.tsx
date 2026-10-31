@@ -88,7 +88,7 @@ function FindingDetailInner() {
         toast.success(`严重等级已改为「${statusMeta("severity", next).label}」`);
       } catch (e) {
         setFinding((cur) => (cur ? { ...cur, severity: prev } : cur));
-        toast.error("更新失败：" + (e as Error).message);
+        toast.error(`更新失败：${(e as Error).message}`);
       }
     },
     [finding, id],
@@ -105,7 +105,7 @@ function FindingDetailInner() {
         toast.success(`处理状态已改为「${statusMeta("finding", next).label}」`);
       } catch (e) {
         setFinding((cur) => (cur ? { ...cur, status: prev } : cur));
-        toast.error("更新失败：" + (e as Error).message);
+        toast.error(`更新失败：${(e as Error).message}`);
       }
     },
     [finding, id],
