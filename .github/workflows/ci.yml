@@ -55,10 +55,8 @@ jobs:
       - run: go test ./... -count=1 -p 1
 
   web-lint:
-    name: Web lint (biome, non-blocking)
+    name: Web lint (biome)
     runs-on: ubuntu-latest
-    # Existing code has biome errors; non-blocking until they are fixed.
-    continue-on-error: true
     defaults:
       run:
         working-directory: web
