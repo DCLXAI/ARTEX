@@ -342,17 +342,17 @@ export default function SkillsPage() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const load = React.useCallback(() => {
-    api.agents().then(setAgents).catch(() => {});
-    api.mcpServers().then(setMcpOptions).catch(() => {});
-    api.missingSkills().then(setMissing).catch(() => {});
+    api.agents().then(setAgents).catch(() => { /* ignore */ });
+    api.mcpServers().then(setMcpOptions).catch(() => { /* ignore */ });
+    api.missingSkills().then(setMissing).catch(() => { /* ignore */ });
     api.skills().then((ss) => {
       setSkills(ss);
       ss.forEach((s) =>
-        api.skillVisibility(s.name)
+        void api.skillVisibility(s.name)
           .then((ids) => setVisibility((v) => ({ ...v, [s.name]: ids })))
-          .catch(() => {}),
+          .catch(() => { /* ignore */ }),
       );
-    }).catch(() => {});
+    }).catch(() => { /* ignore */ });
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
@@ -382,7 +382,7 @@ export default function SkillsPage() {
   function onUploadPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = ""; // reset so picking the same file again re-fires
-    if (f) uploadZip(f);
+    if (f) void uploadZip(f);
   }
 
   React.useEffect(() => {

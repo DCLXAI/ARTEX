@@ -23,7 +23,7 @@ export function FindingLineageView({ findingId }: { findingId: string }) {
         setNodes(g.nodes ?? []);
         setEdges(g.edges ?? []);
       })
-      .catch(() => {})
+      .catch(() => { /* ignore */ })
       .finally(() => {
         if (alive) setLoaded(true);
       });

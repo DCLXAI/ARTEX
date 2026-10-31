@@ -58,19 +58,19 @@ export default function MCPPage() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const load = React.useCallback(() => {
-    api.agents().then(setAgents).catch(() => {});
+    api.agents().then(setAgents).catch(() => { /* ignore */ });
     api
       .mcpServers()
       .then((ss) => {
         setServers(ss);
         ss.forEach((s) =>
-          api
+          void api
             .resourceVisibility("mcp", s.id)
             .then((ids) => setVisibility((v) => ({ ...v, [s.id]: ids })))
-            .catch(() => {}),
+            .catch(() => { /* ignore */ }),
         );
       })
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }, []);
   React.useEffect(() => {
     load();
@@ -120,7 +120,7 @@ export default function MCPPage() {
     });
     setTab("config");
     setOpen(true);
-    loadTools(s.id);
+    void loadTools(s.id);
   }
 
   async function loadTools(id: number) {
