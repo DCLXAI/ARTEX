@@ -18,7 +18,7 @@ jobs:
     name: Go tests (no Postgres)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -46,7 +46,7 @@ jobs:
     env:
       ARTEX_PG_DSN: postgres://artex:artex@localhost:5432/artex?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -54,8 +54,8 @@ jobs:
       # -p 1: packages share one database, avoid cross-package races.
       - run: go test ./... -count=1 -p 1
 
-  web-lint:
-    name: Web lint (biome)
+  web:
+    name: Web (lint · types · build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,11 +63,14 @@ jobs:
     env:
       HUSKY: "0"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npx tsc --noEmit -p tsconfig.json
+      # build:static is the NEXT_EXPORT build the release binary embeds.
+      - run: npm run build:static

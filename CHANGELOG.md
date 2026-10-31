@@ -15,7 +15,7 @@
 
 #### 新增的功能
 
-- **GitHub Actions `ci.yml`**：无 Postgres 的 Go 单元测试、带 `postgres:16` 服务的集成测试（`ARTEX_PG_DSN`）、以及 `web/` 的 biome lint，三个任务均为阻断项。
+- **GitHub Actions `ci.yml`**：无 Postgres 的 Go 单元测试、带 `postgres:16` 服务的集成测试（`ARTEX_PG_DSN`）、以及 `web/` 的前端检查（biome lint、`tsc` 类型检查、发布二进制所内嵌的 `build:static` 静态构建），三个任务均为阻断项。`actions/checkout` 与 `actions/setup-node` 使用 v5（v4 运行在 GitHub 已弃用的 Node 20 上）。
 
 #### 修复的问题
 
