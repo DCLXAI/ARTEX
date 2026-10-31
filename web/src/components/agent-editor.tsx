@@ -79,7 +79,12 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
   const captureOn = !!settings?.traffic_capture;
   const webSearchGlobalOn = !!settings?.web_search_enabled;
 
-  const reload = React.useCallback(() => {
+  // Initial load: fetch the agent once and seed every editable field. This is
+  // the ONLY place that resets all fields, and the ONLY place that nulls detail
+  // (→ "未找到 Agent") on failure — there is nothing to show if the first fetch
+  // fails. Explicit saves use the targeted refreshes below, not this, so a save
+  // in one section never discards an unsaved draft in another.
+  const load = React.useCallback(() => {
     api
       .getAgent(agentKey)
       .then((d) => {
@@ -109,8 +114,40 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       .finally(() => setLoaded(true));
   }, [agentKey]);
   React.useEffect(() => {
-    reload();
-  }, [reload]);
+    load();
+  }, [load]);
+
+  // Targeted refreshes for the explicit-save handlers: each re-reads only the
+  // fields its own section owns, so other sections' unsaved drafts survive.
+  // Unlike the initial load, a failed refetch here keeps the current detail (the
+  // agent still exists — the save just succeeded) and only surfaces a toast.
+  async function refreshPrompt() {
+    try {
+      const d = await api.getAgent(agentKey);
+      setPrompt(d.prompt ?? "");
+      setVersions(d.versions ?? []);
+    } catch (e) {
+      toast.error("刷新失败：" + (e as Error).message);
+    }
+  }
+  async function refreshWrapup() {
+    try {
+      const d = await api.getAgent(agentKey);
+      setWrapup(d.wrapup_prompt ?? "");
+      setWrapupTurns(String(d.wrapup_max_turns ?? 0));
+    } catch (e) {
+      toast.error("刷新失败：" + (e as Error).message);
+    }
+  }
+  async function refreshTaskTimeoutWrapup() {
+    try {
+      const d = await api.getAgent(agentKey);
+      setTtWrapup(d.task_timeout_wrapup_prompt ?? "");
+      setTtTurns(String(d.task_timeout_wrapup_max_turns ?? 0));
+    } catch (e) {
+      toast.error("刷新失败：" + (e as Error).message);
+    }
+  }
 
   async function doPreview() {
     try {
@@ -124,7 +161,7 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
     try {
       const r = await api.saveAgentPrompt(agentKey, prompt);
       toast.success(`已保存为版本 v${r.version}`);
-      reload();
+      void refreshPrompt(); // refresh only prompt/versions; keep other sections' drafts
       onSaved?.();
     } catch (e) {
       toast.error("保存失败：" + (e as Error).message);
@@ -134,7 +171,7 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
     try {
       const r = await api.resetAgentPrompt(agentKey);
       toast.success(`已恢复为内置默认（v${r.version}）`);
-      reload();
+      void refreshPrompt(); // reset created a new version; refresh only prompt/versions
     } catch (e) {
       toast.error("恢复失败：" + (e as Error).message);
     }
@@ -144,16 +181,21 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       const turns = Math.max(0, Math.floor(Number(wrapupTurns) || 0));
       await api.saveAgentWrapup(agentKey, wrapup, turns);
       toast.success(wrapup.trim() || turns > 0 ? "收尾配置已保存（下次运行生效）" : "已清空，将使用内置默认");
-      reload();
+      void refreshWrapup(); // refresh only the wrap-up fields; keep other sections' drafts
     } catch (e) {
       toast.error("保存失败：" + (e as Error).message);
     }
   }
   async function resetWrapup() {
     try {
-      await api.resetAgentWrapup(agentKey);
+      const r = await api.resetAgentWrapup(agentKey);
       toast.success("已恢复为内置默认");
-      reload();
+      // Override cleared → effective prompt/turns fall back to built-in defaults;
+      // apply only the wrap-up fields (don't touch other sections).
+      setWrapup("");
+      setWrapupTurns("0");
+      setWrapupDefault(r.wrapup_default ?? "");
+      setWrapupTurnsDefault(r.wrapup_max_turns_default ?? 5);
     } catch (e) {
       toast.error("恢复失败：" + (e as Error).message);
     }
@@ -163,16 +205,20 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       const turns = Math.max(0, Math.floor(Number(ttTurns) || 0));
       await api.saveAgentTaskTimeoutWrapup(agentKey, ttWrapup, turns);
       toast.success("任务超时收尾配置已保存（下次运行生效）");
-      reload();
+      void refreshTaskTimeoutWrapup(); // refresh only the task-timeout wrap-up fields
     } catch (e) {
       toast.error("保存失败：" + (e as Error).message);
     }
   }
   async function resetTaskTimeoutWrapup() {
     try {
-      await api.resetAgentTaskTimeoutWrapup(agentKey);
+      const r = await api.resetAgentTaskTimeoutWrapup(agentKey);
       toast.success("已恢复为内置默认");
-      reload();
+      // Override cleared → fall back to built-in defaults; only the task-timeout fields.
+      setTtWrapup("");
+      setTtTurns("0");
+      setTtWrapupDefault(r.task_timeout_wrapup_default ?? "");
+      setTtTurnsDefault(r.task_timeout_wrapup_max_turns_default ?? 5);
     } catch (e) {
       toast.error("恢复失败：" + (e as Error).message);
     }
@@ -191,7 +237,10 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       if (showInteractiveShell) patch.interactive_shell = interactiveShell;
       await api.saveAgentConfig(agentKey, patch);
       toast.success("已保存运行配置（立即生效）");
-      reload();
+      // The config inputs already hold the saved values; mirror them into
+      // detail.agent instead of reload(), which would discard unsaved drafts in
+      // the other sections (and could null detail on a failed refetch).
+      setDetail((d) => (d ? { ...d, agent: { ...d.agent, ...patch } } : d));
     } catch (e) {
       toast.error("保存失败：" + (e as Error).message);
     }
