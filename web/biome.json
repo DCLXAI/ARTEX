@@ -96,6 +96,17 @@
       },
       "complexity": {
         "noImportantStyles": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": {
+          "level": "error",
+          "options": {
+            "inputComponents": [
+              "Checkbox",
+              "Switch"
+            ]
+          }
+        }
       }
     },
     "domains": {

@@ -199,6 +199,7 @@ function graphLabel(n: CoverageGraphNode): string {
     if (n.port) parts.push(`:${n.port}`);
     if (n.page_title) parts.push(n.page_title);
     if (n.status_code) parts.push(String(n.status_code));
+    // biome-ignore lint/nursery/useNullishCoalescing: empty strings must fall through too
     return parts.length ? parts.join(" · ") : n.domain || n.ip || n.label;
   }
   if (n.kind === "endpoint" && n.url) {

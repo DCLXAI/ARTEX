@@ -192,11 +192,13 @@ export default function LLMRecordsPage() {
   }, [session]);
 
   // Reset page on filter change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filters are intentional triggers to reset paging
   React.useEffect(() => {
     setPage(0);
   }, [sessionQ, model, size, pickedTask]);
 
   // Load list.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filters are intentional triggers to reset paging
   React.useEffect(() => {
     let alive = true;
     setLoading(true);

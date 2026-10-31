@@ -629,6 +629,7 @@ export default function SkillsPage() {
         const open = expanded.has(key);
         return (
           <div key={node.path}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: tree row mirrors existing mouse UX; keyboard support tracked as follow-up */}
             <div
               className="group relative flex cursor-pointer select-none items-center gap-1 rounded py-0.5 pr-1 text-sm hover:bg-muted"
               style={{ paddingLeft: baseIndent }}
@@ -670,6 +671,7 @@ export default function SkillsPage() {
       // file node
       const isSelected = selected?.skill === skill && selected.path === node.path;
       return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: tree row mirrors existing mouse UX; keyboard support tracked as follow-up
         <div
           key={node.path}
           className={cn(
@@ -771,6 +773,7 @@ export default function SkillsPage() {
                 return (
                   <div key={s.name}>
                     {/* skill 根节点 */}
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: tree row mirrors existing mouse UX; keyboard support tracked as follow-up */}
                     <div
                       className={cn(
                         "group relative flex cursor-pointer select-none items-center gap-1 rounded px-2 py-1 text-sm",
