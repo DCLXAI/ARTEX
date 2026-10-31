@@ -291,6 +291,7 @@ server {
 - 后端：`go run ./cmd/artex`（不带 `-tags embedui` 则不内嵌前端）
 - 前端：`cd web && npm run dev`（`/api` 反代到后端，带热更新）
 - 测试：`go test ./...`
+- 依赖说明：agent SDK [`github.com/Autumn-27/norma`](https://github.com/Autumn-27/norma)（当前 `v0.4.3`）是公开仓库，并已缓存在 Go 模块代理 `proxy.golang.org`，`go mod download` 即可正常拉取，无需额外获取源码。若遇到 “dependency missing”，请检查 `GOPROXY`（勿设为仅 `direct` 的私有/离线代理）与网络，再执行 `go mod download github.com/Autumn-27/norma@v0.4.3`。
 - Mock 预览（无后端）：`cd web && NEXT_PUBLIC_MOCK=1 npm run dev`
 
 ---
