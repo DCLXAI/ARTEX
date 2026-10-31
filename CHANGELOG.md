@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### 更新
+
+#### 变更
+
+- **一键更新源改为 `DCLXAI/ARTEX`**：页面「版本与更新」现在从本仓库的 Release 检查和下载版本，README 中的克隆地址与 Releases 链接同步更新。本仓库为公开仓库，`ARTEX_UPDATE_GITHUB_TOKEN` 改为可选，仅在遇到 GitHub 接口限流时需要。更新源仍是编译期常量，不可通过配置修改。
+
 ### 测试
 
 #### 修复的问题
