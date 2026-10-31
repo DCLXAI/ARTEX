@@ -245,10 +245,17 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       toast.success(`${on ? "已解绑" : "已绑定"}工具「${t.key}」`);
       onSaved?.(); // refresh the list so the card's 工具 count stays in sync
     } catch (e) {
+      // undo the flip locally, like applyVis: the resync below can fail too
+      setTools((ts) => ts.map((x) => (x.key === t.key ? { ...x, agents: t.agents } : x)));
       toast.error("保存工具绑定失败：" + (e as Error).message);
-      reload();
       api.tools().then(setTools).catch(() => { /* best-effort resync; the save error was already toasted */ });
     }
+  }
+  // The Triggers tab unmounts while hidden and re-reads its values from
+  // detail.agent on remount, so record each saved trigger setting there. Not
+  // reload(): that would also discard unsaved edits in the other tabs.
+  function applySavedTriggerBehavior(patch: TriggerBehaviorPatch) {
+    setDetail((d) => (d ? { ...d, agent: { ...d.agent, ...patch } } : d));
   }
 
   if (loaded && !detail) {
@@ -666,7 +673,7 @@ export function AgentEditor({ agentKey, onSaved }: { agentKey: string; onSaved?:
       {/* 触发(P3, 仅自定义 agent) */}
       {isCustom && (
         <TabsContent value="triggers" className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-          <AgentTriggersTab agentKey={agentKey} agent={detail?.agent} />
+          <AgentTriggersTab agentKey={agentKey} agent={detail?.agent} onBehaviorSaved={applySavedTriggerBehavior} />
         </TabsContent>
       )}
     </Tabs>
@@ -727,30 +734,47 @@ function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
   );
 }
 
+// 触发后处理策略的一次保存:只带改动的那一项,后端按字段合并,其余项保持存量值。
+type TriggerBehaviorPatch = Pick<Agent, "trigger_run_mode" | "trigger_merge_mode" | "trigger_max_parallel">;
+
 // AgentTriggersTab manages a custom agent's P3 triggers: list + add + delete.
 // Each trigger fires (定时/发现finding/目标达成/任务超时/工具调用，可多选) → a new conversation runs
 // in parallel with the base user message + auto context appended by the backend.
-function AgentTriggersTab({ agentKey, agent }: { agentKey: string; agent?: Agent }) {
+function AgentTriggersTab({
+  agentKey,
+  agent,
+  onBehaviorSaved,
+}: {
+  agentKey: string;
+  agent?: Agent;
+  onBehaviorSaved: (patch: TriggerBehaviorPatch) => void;
+}) {
   const [triggers, setTriggers] = React.useState<AgentTrigger[]>([]);
   const [tools, setTools] = React.useState<Tool[]>([]);
   // 触发后处理策略(每 agent);初值来自 agent detail,改动即保存。
   const [runMode, setRunMode] = React.useState<"serial" | "parallel">(agent?.trigger_run_mode ?? "serial");
   const [mergeMode, setMergeMode] = React.useState<"by_task" | "all" | "none">(agent?.trigger_merge_mode ?? "all");
   const [maxParallel, setMaxParallel] = React.useState(String(agent?.trigger_max_parallel ?? 5));
+  // 逐项跟随 detail:某一项保存成功写回 detail 时只同步该项,
+  // 不会把另一项正在输入、尚未保存的值(如最大并发)冲掉。
   React.useEffect(() => {
     setRunMode(agent?.trigger_run_mode ?? "serial");
+  }, [agent?.trigger_run_mode]);
+  React.useEffect(() => {
     setMergeMode(agent?.trigger_merge_mode ?? "all");
+  }, [agent?.trigger_merge_mode]);
+  React.useEffect(() => {
     setMaxParallel(String(agent?.trigger_max_parallel ?? 5));
-  }, [agent?.trigger_run_mode, agent?.trigger_merge_mode, agent?.trigger_max_parallel]);
+  }, [agent?.trigger_max_parallel]);
 
-  async function saveBehavior(patch: {
-    trigger_run_mode?: "serial" | "parallel";
-    trigger_merge_mode?: "by_task" | "all" | "none";
-    trigger_max_parallel?: number;
-  }) {
+  // saveBehavior 保存一项策略。成功后写回父组件的 detail:本 tab 切走即卸载,重挂时从 detail 取初值。
+  // 失败则 revert 回改动前的值(同 applyVis),控件不停留在没保存上的值。
+  async function saveBehavior(patch: TriggerBehaviorPatch, revert: () => void) {
     try {
       await api.saveAgentConfig(agentKey, patch);
+      onBehaviorSaved(patch);
     } catch (e) {
+      revert();
       toast.error("保存策略失败：" + (e as Error).message);
     }
   }
@@ -929,8 +953,9 @@ function AgentTriggersTab({ agentKey, agent }: { agentKey: string; agent?: Agent
               value={runMode}
               onValueChange={(v) => {
                 const rm = v as "serial" | "parallel";
+                const prev = runMode;
                 setRunMode(rm);
-                void saveBehavior({ trigger_run_mode: rm });
+                void saveBehavior({ trigger_run_mode: rm }, () => setRunMode(prev));
               }}
             >
               <SelectTrigger size="sm" className="h-8 w-40">
@@ -950,8 +975,9 @@ function AgentTriggersTab({ agentKey, agent }: { agentKey: string; agent?: Agent
               disabled={runMode === "parallel"}
               onValueChange={(v) => {
                 const mm = v as "by_task" | "all" | "none";
+                const prev = mergeMode;
                 setMergeMode(mm);
-                void saveBehavior({ trigger_merge_mode: mm });
+                void saveBehavior({ trigger_merge_mode: mm }, () => setMergeMode(prev));
               }}
             >
               <SelectTrigger size="sm" className="h-8 w-44">
@@ -977,8 +1003,10 @@ function AgentTriggersTab({ agentKey, agent }: { agentKey: string; agent?: Agent
                 onChange={(e) => setMaxParallel(e.target.value)}
                 onBlur={() => {
                   const n = Math.max(0, Math.floor(Number(maxParallel) || 0));
+                  // 输入框里已是改过的草稿,失败时回到 detail 里上次保存的值
+                  const saved = String(agent?.trigger_max_parallel ?? 5);
                   setMaxParallel(String(n));
-                  void saveBehavior({ trigger_max_parallel: n });
+                  void saveBehavior({ trigger_max_parallel: n }, () => setMaxParallel(saved));
                 }}
               />
             </div>
