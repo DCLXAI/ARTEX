@@ -1,9 +1,10 @@
 package server
 
 import (
-	"context"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Autumn-27/artex/db"
 )
@@ -18,7 +19,7 @@ func TestChatUnavailableReasonDistinguishesStates(t *testing.T) {
 	}
 	defer m.Close()
 	td := t.TempDir()
-	s := New(context.Background(), m, td, td, td)
+	s := newTestServerDirs(t, m, td, td, td)
 
 	// Start from a clean profile table; other tests in the shared DB may have left rows.
 	existing, _ := m.pg.ListProfiles()
@@ -68,7 +69,7 @@ func TestResolveChatAgentHonoursConversationProfile(t *testing.T) {
 	}
 	defer m.Close()
 	td := t.TempDir()
-	s := New(context.Background(), m, td, td, td)
+	s := newTestServerDirs(t, m, td, td, td)
 
 	// Force the global fallback to nil so a non-nil result can ONLY come from the
 	// conversation's own profile — this is exactly the situation the user hit
@@ -77,7 +78,7 @@ func TestResolveChatAgentHonoursConversationProfile(t *testing.T) {
 	s.chatAgent = nil
 	s.cfgMu.Unlock()
 
-	id, err := m.pg.SaveProfile(&db.LLMProfile{Name: "conv-pick", Format: "anthropic", Model: "claude-x", APIKey: "sk-test"})
+	id, err := m.pg.SaveProfile(&db.LLMProfile{Name: fmt.Sprintf("conv-pick-%d", time.Now().UnixNano()), Format: "anthropic", Model: "claude-x", APIKey: "sk-test"})
 	if err != nil {
 		t.Fatal(err)
 	}
