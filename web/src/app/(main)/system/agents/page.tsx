@@ -84,6 +84,7 @@ function AgentGridCard({
           )}
         </div>
         <p className="text-muted-foreground line-clamp-2 min-h-8 text-xs">
+          {/* biome-ignore lint/nursery/useNullishCoalescing: the backend sends "" for an unset description, which must show the placeholder too */}
           {agent.description || "（无描述）"}
         </p>
         <div className="text-muted-foreground flex flex-wrap gap-1.5 text-[10px]">

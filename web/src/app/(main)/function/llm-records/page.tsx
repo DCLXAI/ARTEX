@@ -168,7 +168,7 @@ export default function LLMRecordsPage() {
     api
       .settings()
       .then((s) => { if (alive) setRecEnabled(!!s.llm_record); })
-      .catch(() => {});
+      .catch(() => { /* ignore: the toggle keeps its current value */ });
     return () => { alive = false; };
   }, []);
 
@@ -192,11 +192,13 @@ export default function LLMRecordsPage() {
   }, [session]);
 
   // Reset page on filter change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these filters and the page size intentionally reset to the first page.
   React.useEffect(() => {
     setPage(0);
   }, [sessionQ, model, size, pickedTask]);
 
   // Load list.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadTick is an explicit manual-refetch trigger (bumped after a task delete).
   React.useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -207,12 +209,12 @@ export default function LLMRecordsPage() {
         setRecords(r.records ?? []);
         setTotal(r.total ?? 0);
       })
-      .catch(() => {})
+      .catch(() => { /* ignore: the table keeps the rows it already shows */ })
       .finally(() => alive && setLoading(false));
     api
       .llmTasks()
       .then((r) => { if (alive) setTasks(r.tasks ?? []); })
-      .catch(() => {});
+      .catch(() => { /* optional: the task picker keeps its current list */ });
     return () => { alive = false; };
   }, [page, size, sessionQ, model, pickedTask, reloadTick]);
 
@@ -229,7 +231,7 @@ export default function LLMRecordsPage() {
         setPage(0);
         setReloadTick((t) => t + 1);
       })
-      .catch(() => {})
+      .catch(() => { /* ignore: on failure the dialog stays open */ })
       .finally(() => setDeleting(false));
   };
 
@@ -245,7 +247,7 @@ export default function LLMRecordsPage() {
     api
       .llmRecordDetail(selected.id)
       .then((d) => { if (alive) setDetail(d); })
-      .catch(() => {})
+      .catch(() => { /* ignore: the detail panes render as empty */ })
       .finally(() => { if (alive) setDetailLoading(false); });
     return () => { alive = false; };
   }, [selected]);

@@ -26,5 +26,6 @@ func TestMain(m *testing.M) {
 		os.Exit(m.Run())
 	}
 	defer conn.Exec(`SELECT pg_advisory_unlock(7337741002)`) //nolint:errcheck
+	_, _ = conn.Exec(`UPDATE tasks SET status='done', paused=true, queued=false WHERE status IS NULL OR status NOT IN ('done','failed','timeout')`)
 	os.Exit(m.Run())
 }

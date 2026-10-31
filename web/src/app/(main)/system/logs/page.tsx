@@ -125,6 +125,7 @@ export default function LogsPage() {
     );
   }, [lines, q, level]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: new or re-filtered lines intentionally re-run the stick-to-bottom scroll.
   React.useEffect(() => {
     if (stick.current && !paused) bottom.current?.scrollIntoView();
   }, [filtered, paused]);

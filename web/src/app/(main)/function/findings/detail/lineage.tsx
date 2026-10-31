@@ -23,7 +23,9 @@ export function FindingLineageView({ findingId }: { findingId: string }) {
         setNodes(g.nodes ?? []);
         setEdges(g.edges ?? []);
       })
-      .catch(() => {})
+      .catch(() => {
+        // Best-effort: on failure keep the current nodes; on first load that shows the no-lineage message.
+      })
       .finally(() => {
         if (alive) setLoaded(true);
       });

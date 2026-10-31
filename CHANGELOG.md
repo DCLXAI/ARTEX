@@ -4,6 +4,36 @@
 
 ## [Unreleased]
 
+### 更新
+
+#### 变更
+
+- **一键更新源改为 `DCLXAI/ARTEX`**：页面「版本与更新」现在从本仓库的 Release 检查和下载版本，README 中的克隆地址与 Releases 链接同步更新。本仓库为公开仓库，`ARTEX_UPDATE_GITHUB_TOKEN` 改为可选，仅在遇到 GitHub 接口限流时需要。更新源仍是编译期常量，不可通过配置修改。
+
+### 测试
+
+#### 修复的问题
+
+- **无 Postgres 时 `go test ./server` 不再整包失败**：`trafficEvidenceServer`（流量证据 / 漏洞工作流 / 通知推送端到端用例共用）在拿不到数据库配置时原先 `t.Fatal`，导致本地未配 `ARTEX_PG_DSN` 时二十多个用例直接红。现与其它 server 夹具一致改为 `t.Skip`。
+- **Postgres CI 下 agent/server 失败用例**：`TestGraphOverviewExpandsAssociatedCompanyScope` 仍断言已删除的 `coverage.scope` 字段（06a43f3 精简概览后只保留 host_count 等）；改为断言字段已移除并用 host_count / 资产查询验证企业范围。`TestInheritedActivityDetailAndRelationDeletion` 等在 `New()` 恢复共享库残留任务并启动 worker 后，测试结束 TempDir 清理因目录非空失败；现 `Server` 持有可取消根 context，新增 `Close`/`newTestServer`，测试结束停掉运行时，TestMain 启动前也将非终态任务标为 done。
+
+### CI
+
+#### 新增的功能
+
+- **GitHub Actions `ci.yml`**：无 Postgres 的 Go 单元测试、带 `postgres:16` 服务的集成测试（`ARTEX_PG_DSN`）、以及 `web/` 的前端检查（biome lint、`tsc` 类型检查、发布二进制所内嵌的 `build:static` 静态构建），三个任务均为阻断项。`actions/checkout` 与 `actions/setup-node` 使用 v5（v4 运行在 GitHub 已弃用的 Node 20 上）。
+
+#### 修复的问题
+
+- **`web/` 的 biome lint 清零，CI 中改为阻断**：原有 84 个 lint 错误，web-lint 任务只能以非阻断方式运行。其中 21 个 `noLabelWithoutControl` 是误报：被 `<label>` 包裹的 shadcn `Checkbox` / `Switch` 渲染为 Radix `<button role="checkbox|switch">`，本就能被 label 关联，现于 `biome.json` 将二者声明为 `inputComponents`。其余 63 个按「不改变运行时行为」修复：浮动 Promise 显式加 `void`，空 `catch` 块写明忽略原因，`forEach` 回调改为块体；刻意多写的 effect 触发依赖、空字符串也要回退的 `||`、只负责阻止冒泡的容器，以及内含操作按钮、无法改为 `<button>` 的技能文件树行（其键盘导航尚未实现），用写明理由的 `biome-ignore` 标注。警告与提示数量不变（138 / 734），`tsc`、`next build` 与 `build:static` 均通过。web-lint 任务已去掉 `continue-on-error`，此后新增的 lint 错误会让 CI 变红。
+
+### Agent
+
+#### 修复的问题
+
+- **Agent 编辑器「触发」页不再显示过期的触发策略**：运行模式保存为「并行」后切到其它标签页再切回，「触发」页会重新挂载，并按打开编辑器时读到的旧数据显示「串行」，而后端存的是并行。此时选「串行」不会发出保存（受控 Select 认为值没变），改合并模式也只提交 `trigger_merge_mode`，后端按字段合并，运行模式仍是并行。现在每项策略保存成功后都写回编辑器持有的 Agent 数据（不整体重载，其它标签页未保存的修改不受影响），重新挂载时显示的就是已保存的值；保存失败时控件恢复为改动前的值。
+- **Agent 编辑器「Tools」页绑定保存失败时在本地撤销勾选**：原先只靠重新拉取工具列表来撤销乐观勾选，拉取也失败时复选框会一直显示没保存上的绑定；失败时还会整体重载编辑器，丢掉其它标签页未保存的修改，后端不可用时整个编辑器会变成「未找到 Agent」。现在失败时先在本地恢复该工具原来的绑定，不再整体重载。
+
 ## [0.3.15] - 2026-10-07
 
 ### 拦截

@@ -42,6 +42,7 @@ type Server struct {
 	m      *Manager
 	engine *Engine
 	ctx    context.Context
+	cancel context.CancelFunc
 
 	skillDir string // root directory for skill subdirectories
 	jwtKey   []byte // HS256 signing key loaded from / generated into dataDir/jwt.key
@@ -145,7 +146,8 @@ func New(ctx context.Context, m *Manager, skillDir string, dataDir string, keyDi
 	if err != nil {
 		log.Fatalf("[auth] JWT key: %v", err)
 	}
-	s := &Server{m: m, engine: NewEngine(m), ctx: ctx, skillDir: skillDir, jwtKey: key, chatBusy: map[string]bool{},
+	ctx, cancel := context.WithCancel(ctx)
+	s := &Server{m: m, engine: NewEngine(m), ctx: ctx, cancel: cancel, skillDir: skillDir, jwtKey: key, chatBusy: map[string]bool{},
 		chatCancel: map[string]context.CancelCauseFunc{}, triggerQ: map[string][]triggeredRun{},
 		triggerActive: map[string]int{}, triggerCfg: map[string]triggerBehavior{},
 		profChatAgents: map[int64]*agent.ChatAgent{},
@@ -257,6 +259,32 @@ func New(ctx context.Context, m *Manager, skillDir string, dataDir string, keyDi
 	s.startTaskArchiveWorker()
 	s.wireInterceptReviewer() // LLM 兜底审批:未命中拦截规则的命令交给模型判定
 	return s
+}
+
+// Close cancels the server root context and stops every restored/started task
+// runtime. Tests must call this (via newTestServer) so TempDir cleanup is not
+// racing background workers that still write under Manager.dir.
+func (s *Server) Close() {
+	if s == nil {
+		return
+	}
+	if s.cancel != nil {
+		s.cancel()
+	}
+	if s.engine != nil && s.m != nil {
+		for _, t := range s.m.List() {
+			s.engine.StopTask(t.ID)
+		}
+	}
+	done := make(chan struct{})
+	go func() {
+		s.archiveWG.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+	}
 }
 
 // Restored deadline and worker loops must inherit the same context as new tasks,

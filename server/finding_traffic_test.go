@@ -24,7 +24,9 @@ func trafficEvidenceServer(t *testing.T) (*Server, *db.RecordedFinding, func(str
 	t.Helper()
 	m, err := NewManager(t.TempDir(), "")
 	if err != nil {
-		t.Fatal(err)
+		// Match other server helpers: unit CI / local runs without Postgres
+		// should skip these integration fixtures, not fail the whole package.
+		t.Skipf("postgres unavailable (%v) — skipping", err)
 	}
 	t.Cleanup(func() { m.Close() })
 	m.traffic, err = traffic.Open(filepath.Join(m.dir, "traffic"), ":0")
@@ -40,6 +42,7 @@ func trafficEvidenceServer(t *testing.T) (*Server, *db.RecordedFinding, func(str
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	s := New(ctx, m, t.TempDir(), t.TempDir(), t.TempDir())
+	t.Cleanup(s.Close)
 	s.archiveWG.Wait()
 	// The archive test below replaces the cancelled service context. Wait for
 	// the side-question snapshot writer too before reusing this fixture.

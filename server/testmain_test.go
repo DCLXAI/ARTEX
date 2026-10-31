@@ -26,5 +26,9 @@ func TestMain(m *testing.M) {
 		os.Exit(m.Run())
 	}
 	defer conn.Exec(`SELECT pg_advisory_unlock(7337741002)`) //nolint:errcheck
+	// Prior package runs (and crashed tests) leave non-terminal tasks in the shared
+	// ARTEX_PG_DSN database. New() restores them and starts workers into the next
+	// test's TempDir — mark them terminal first so suites start from a quiet DB.
+	_, _ = conn.Exec(`UPDATE tasks SET status='done', paused=true, queued=false WHERE status IS NULL OR status NOT IN ('done','failed','timeout')`)
 	os.Exit(m.Run())
 }
